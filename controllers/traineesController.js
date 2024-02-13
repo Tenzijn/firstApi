@@ -12,10 +12,18 @@ export const getAllTrainees = async (req, res) => {
   }
 
   // To create a new object to remove the hashed password from the response
-  const allTrainees = [...traineesData];
+  const allTrainees = [];
+  traineesData.forEach((trainee) => {
+    const traineeResponse = { ...trainee };
+    delete traineeResponse.hashedPassword;
+    allTrainees.push(traineeResponse);
+  });
+
   allTrainees.forEach((trainee) => {
     delete trainee.hashedPassword;
   });
+
+  console.log('traineesData: ', traineesData);
 
   res.status(200).json(allTrainees);
 };
@@ -32,6 +40,7 @@ export const getTrainee = async (req, res) => {
 
   // To create a new object to remove the hashed password from the response
   const traineeResponse = { ...trainee };
+
   delete traineeResponse.hashedPassword;
 
   res.status(200).json(traineeResponse);
@@ -107,15 +116,21 @@ export const updateTrainee = async (req, res) => {
   // need to update to check if the user is the same as the trainee that logged in
   // check with session or token jwt
 
-  const token = req.headers.authorization.split(' ')[1];
-  const decodedToken = jwt.verify(token, secret);
-  if (traineeToBeUpdate.id !== decodedToken.id) {
-    res.status(403).json({ message: 'Forbidden request' });
+  if (!traineeToBeUpdate) {
+    res.status(404).json({ message: 'Trainee not found' });
     return;
   }
 
-  if (!traineeToBeUpdate) {
-    res.status(404).json({ message: 'Trainee not found' });
+  const token = req.headers.authorization.split(' ')[1];
+  const decodedToken = jwt.verify(token, secret);
+
+  if (!decodedToken) {
+    res.status(401).json({ message: 'Unauthorized request' });
+    return;
+  }
+
+  if (traineeToBeUpdate.id !== decodedToken.id) {
+    res.status(403).json({ message: 'Forbidden request' });
     return;
   }
 
